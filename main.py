@@ -1,11 +1,21 @@
 from answer_generation import *
+import jsonlines
+import json
 
 
-def main():
-    temp = 0
-    still_going = True
-    problem = str(input("Please input your question\n"))
-    print("\nHappy to help! One moment please.")
+def get_data_from_json():
+    # test_datapoints will contain tuples of each question and answer pair from the test dataset
+    test_datapoints = []
+    with jsonlines.open('sanitized_data.jsonl') as f:
+        for line in f.iter():
+            for problem, answer in line:
+                test_datapoints.append((problem, answer))
+    return test_datapoints
+
+
+def generate_answer(problem):
+    temp = 0  # adjust temperature to have produce different results if the results are failing
+    still_going = True  # will keep going
     while still_going and temp <= 2:
         sol = solve_with_script(problem, temp)
         code = generate_pure_code(sol)
@@ -17,21 +27,35 @@ def main():
             code = generate_pure_code(sol)
             result = compute(code)
             repeats += 1
+        still_going = repeats < 5
         if repeats < 5:
             answer = result[1]
-            print("Okay, got it!")
-            print(answer)
-            u2 = str(input("Is this answer sufficient? If not, we'll turn up the temp and hope for the best "
-                           "(answer with 'y' or 'n')\n"))
-            still_going = u2 == 'n'
             temp += 0.4
-            u3 = str(input("want to see the code produced? (answer with 'y' or 'n')\n"))
-            if u3 == 'y':
-                print(sol)
             clear()
+            return answer
         else:
             still_going = False
-            print("sorry, but it just couldn't generate the right code.")
+            return "FAILED TO PRODUCE ANSWER"
+
+
+def generate_results(test_datapoints):
+    results = []
+    # for every problem and answer in the testing dataset, generate 5 answers in a list, which will then be the results
+    for test_datapoint in test_datapoints:
+        answers = []
+        for i in range(5):
+            answer = generate_answer(test_datapoint[0])
+            answers.append(answer)
+        results.append({test_datapoint[0] : answers})
+    return results
+
+
+def main():
+    test_datapoints = get_data_from_json()
+    results = generate_results(test_datapoints)
+    with open("results.jsonl", 'w') as f:
+        for item in results:
+            f.write(json.dumps(item) + "\n")
 
 
 main()
