@@ -8,8 +8,9 @@ def get_data_from_json():
     test_datapoints = []
     with jsonlines.open('sanitized_data.jsonl') as f:
         for line in f.iter():
-            for problem, answer in line:
-                test_datapoints.append((problem, answer))
+            problem = line["problem"]
+            answer = line["boxed_solution"]
+            test_datapoints.append((problem, answer))
     return test_datapoints
 
 
