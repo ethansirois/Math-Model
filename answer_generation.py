@@ -57,7 +57,7 @@ def compute(code):
     with open('py.py', 'w') as fp:
         fp.write(pure_code)
     try:
-        os.system('python py.py > out.txt')
+        os.system('py py.py > out.txt')
         f = open('out.txt', 'r')
         content = f.read()
         if len(content) == 0:
